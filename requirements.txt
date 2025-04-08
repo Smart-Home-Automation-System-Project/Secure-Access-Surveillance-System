@@ -1,0 +1,7 @@
+numpy
+opencv-python
+face-recognition
+dlib
+paho-mqtt
+matplotlib
+imutils
