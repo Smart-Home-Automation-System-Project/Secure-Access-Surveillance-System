@@ -20,3 +20,4 @@ pip install -r requirements.txt
 
 - door lock testing
   - run `door_lock.py` and check if the door lock is working as expected
+

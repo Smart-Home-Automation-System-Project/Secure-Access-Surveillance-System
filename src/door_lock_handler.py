@@ -3,22 +3,22 @@ import threading
 import time
 from face_authenticator import FaceAuthenticator
 from mqtt_service import MQTTService
+from db_service import DatabaseService
 import json
 
-class DoorLock:
+class DoorLockHandler:
     def __init__(self):
         self.is_locked = True
         self.unlock_time = None
-        self.unlock_duration = 300  # 5 minutes for face auth
+        self.unlock_duration = 300  # 5 minutes for face auth 
         self.auth = FaceAuthenticator()
         self.auth_thread = None
         self.running = False
         self.last_locked_time = None
         self.cooldown_duration = 10
         self.unlocked_by_pin = False
-
         self.mqtt = MQTTService()
-        self.mqtt.set_command_callback(self._handle_command)
+        self.db = DatabaseService()
 
         # Load authorized pins from JSON file
         try:
@@ -28,12 +28,6 @@ class DoorLock:
                 print(f"[INFO] Loaded {len(self.valid_pins)} authorized pins")
         except FileNotFoundError:
             print("[WARNING] auth_config.json not found!")
-
-    def _handle_command(self, command):
-        if command.get("action") == "lock":
-            self.lock()
-        elif command.get("action") == "check_status":
-            self.mqtt.send_status(self.is_locked, "pin" if self.unlocked_by_pin else None)
 
     def unlock(self, by_pin=False):
         """Unlock the door"""
@@ -65,6 +59,8 @@ class DoorLock:
         """Try to unlock door with PIN"""
         if pin in self.valid_pins:
             self.unlock(by_pin=True)
+            # Log the access attempt
+            self.db.log_access("UNKNOWN", True, unlock_method="PIN")
             return True
         return False
 
@@ -82,23 +78,25 @@ class DoorLock:
                     if self.last_locked_time is None or \
                        (datetime.now() - self.last_locked_time).total_seconds() > self.cooldown_duration:
                         print(f"[FACE] Authorized user: {name}")
+                        # Log the access attempt
+                        self.db.log_access(name, authorized)
                         self.unlock(by_pin=False)
                 elif not authorized and self.is_locked:
                     # Wait 5 minutes before sending another alert
-                    if name != "Unauthorized" or (current_time - last_alert_time) >= 300:  # 5 minutes cooldown
+                    if name != "Unauthorized" and (current_time - last_alert_time) >= 300:  # 5 minutes cooldown
                         print(f"[FACE] Unauthorized access detected: {name}")
                         ret, frame = self.auth.cap.read()
                         if ret:
-                            self.mqtt.send_alert(name, frame, "unauthorized_access")
+                            self.db.log_access(name, authorized, frame=frame)
                         else:
                             print("[FACE] Failed to capture frame for alert")
+                            self.db.log_access(name, authorized)
                         last_alert_time = current_time
                 last_detection_time = current_time
             
             self.check_status()
             time.sleep(0.1)
 
-    # debugging function to check if the door lock is working
     def start(self):
         """Start the door control system"""
         self.running = True
@@ -137,7 +135,7 @@ class DoorLock:
         print("\nDoor control system stopped")
 
 if __name__ == "__main__":
-    door = DoorLock()
+    door = DoorLockHandler()
     try:
         door.start()
     except Exception as e:
