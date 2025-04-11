@@ -43,3 +43,14 @@ Thumbs.db
 # Virtual Environment
 venv/
 ENV/
+
+# Config files
+*.json
+
+# Image files
+*.png
+*.jpg
+*.jpeg
+
+# databse files
+*.db

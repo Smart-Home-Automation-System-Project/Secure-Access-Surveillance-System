@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 import pickle
 import time
-import json
+from db.db_service import get_authorized_users
 
 class FaceAuthenticator:
     def __init__(self):
@@ -22,14 +22,19 @@ class FaceAuthenticator:
         # Configuration
         self.cv_scaler = 4
         
-        # Load authorized users from JSON file
+        # Load authorized users from database
+        self.authorized_names = []
         try:
-            with open("config/auth_config.json", "r") as f:
-                config = json.load(f)
-                self.authorized_names = config["authorized_users"]
+            users = get_authorized_users()
+            if users is not None:
+                self.authorized_names = users
                 print(f"[INFO] Loaded {len(self.authorized_names)} authorized users")
+            else:
+                print("[WARNING] No authorized users found in database")
         except FileNotFoundError:
-            print("[WARNING] auth_config.json not found!")
+            print("[WARNING] Failed to load authorized users from database")
+        except Exception as e:
+            print(f"[ERROR] Failed to load authorized users: {e}")
 
     def check_authentication(self):
         """Capture frame and return authentication status"""

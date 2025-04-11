@@ -2,9 +2,8 @@ from datetime import datetime, timedelta
 import threading
 import time
 from face_authenticator import FaceAuthenticator
-from mqtt_service import MQTTService
-from db_service import DatabaseService
-import json
+from mqtt.mqtt_service import MQTTService
+from db.db_service import DatabaseService, get_pins
 
 class DoorLockHandler:
     def __init__(self):
@@ -20,14 +19,16 @@ class DoorLockHandler:
         self.mqtt = MQTTService()
         self.db = DatabaseService()
 
-        # Load authorized pins from JSON file
+        # Load authorized pins from 
+        self.valid_pins = []
         try:
-            with open("config/auth_config.json", "r") as f:
-                config = json.load(f)
-                self.valid_pins = config["authorized_pins"]
+            self.valid_pins = get_pins()
+            if not self.valid_pins:
+                print("[WARNING] No authorized pins found in database")
+            else:
                 print(f"[INFO] Loaded {len(self.valid_pins)} authorized pins")
         except FileNotFoundError:
-            print("[WARNING] auth_config.json not found!")
+            print("[WARNING] Failed to load authorized pins from database")
 
     def unlock(self, by_pin=False):
         """Unlock the door"""
