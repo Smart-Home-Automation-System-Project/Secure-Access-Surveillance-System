@@ -28,6 +28,25 @@ def StartNow():
     except Exception as e:
         print(f"An error occurred: {e}")
 
+def Confirm():
+    """Starts the face_rec_model_training.py script and closes the current window."""
+    try:
+        # Construct the full path to face_rec_model_training.py
+        script_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "src",
+            "face_rec_model_training.py"
+        )
+        print(f"Attempting to run: {script_path}")
+        subprocess.Popen([sys.executable, script_path])
+        print("face_rec_model_training.py started.")
+        # Close the current homepage window
+    except FileNotFoundError:
+        print(f"Error: Script not found at {script_path}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+
 customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("blue")
 
@@ -132,8 +151,11 @@ SetUp.grid(column=0, row=0, pady=(20, 5), padx=5 )
 Button_Start = customtkinter.CTkButton(frame5, text='Stat Now', command= StartNow)
 Button_Start.grid(column=0, row=1, pady=(5, 10), padx=5)
 
+SetUp = customtkinter.CTkLabel(frame5, text='Confirm User', font=('', 20, 'bold'))
+SetUp.grid(column=3, row=0, pady=(20, 5), padx=5 )
 
-
+Button_Start = customtkinter.CTkButton(frame5, text='Confirm', command= Confirm)
+Button_Start.grid(column=3, row=1, pady=(5, 10), padx=5)
 
 root.mainloop()
 

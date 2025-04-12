@@ -125,7 +125,7 @@ print("Face Data Collection GUI")
 customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("blue")
 
-root = customtkinter.CTk()
+root = customtkinter.CTk() 
 root.geometry("400x300")
 root.title("Face Data Collection")
 
@@ -136,7 +136,7 @@ frame5.pack(fill="both" ,padx=(10,10), pady=(5,10), expand=True)
 
 frame5.grid_columnconfigure((0, 1, 2), weight=1)
 
-SetUp = customtkinter.CTkLabel(frame5, text='Instruction', font=('', 20, 'bold'))
+SetUp = customtkinter.CTkLabel(frame5, text='Instructions', font=('', 20, 'bold'))
 SetUp.grid(column=0, row=0, columnspan=3, pady=10, padx=10 )
 
 SetUp1 = customtkinter.CTkLabel(frame5, text='1. Add user name.', font=('', 15))
@@ -151,8 +151,9 @@ SetUp3.grid(column=1, row=3,  pady=0, padx=(50,0), sticky="w")
 SetUp4 = customtkinter.CTkLabel(frame5, text='4. Press "Q" to exit.', font=('', 15))
 SetUp4.grid(column=1, row=4, pady=0, padx=(50,0), sticky="w")
 
-SetUp5 = customtkinter.CTkLabel(frame5, text='5. Close the Window.', font=('', 15))
+SetUp5 = customtkinter.CTkLabel(frame5, text='5. Close this Window & Confirm User.', font=('', 15))
 SetUp5.grid(column=1, row=5,  pady=0, padx=(50,0), sticky="w")
+
 
 Button_Start = customtkinter.CTkButton(frame5, text="Start Data Collection", command=open_capture_window)
 Button_Start.grid(column=0, row=6,columnspan=3, pady=(20, 10), padx=5)
