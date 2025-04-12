@@ -4,6 +4,9 @@ import face_recognition
 import pickle
 import cv2
 
+
+
+
 def create_folder(folder_name):
     if not os.path.exists(folder_name):
         os.makedirs(folder_name)
@@ -51,3 +54,5 @@ try:
     print(f"[INFO] Training complete. Encodings saved to '{pickle_file_path}'")
 except IOError as e:
     print(f"[ERROR] Failed to save encodings: {e}")
+
+

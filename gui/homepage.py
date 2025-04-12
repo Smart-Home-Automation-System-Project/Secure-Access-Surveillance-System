@@ -10,6 +10,23 @@ from tkinter import *
 import customtkinter
 import sys
 
+#######################################
+# Popup for user confirmation successfully completed
+
+def open_popup(txt): #popup window function
+    popup_window = customtkinter.CTkToplevel(root)
+    popup_window.title("Error")
+    popup_window.resizable(False, False)
+    label = customtkinter.CTkLabel(popup_window, text=txt)
+    label.pack(padx=20, pady=20)
+    close_button = customtkinter.CTkButton(popup_window, text="Ok", command=popup_window.destroy)
+    close_button.pack(pady=10)
+    popup_window.grab_set()  # Make the popup modal
+
+
+#######################################
+
+
 def StartNow():
     """Starts the interface_capture_face.py script and closes the current window."""
     try:
@@ -29,6 +46,12 @@ def StartNow():
         print(f"An error occurred: {e}")
 
 def Confirm():
+
+    #############################
+    # Temp Popup for user confirmation successfully completed
+    open_popup("User confirmation successfully completed.")
+    #############################
+
     """Starts the face_rec_model_training.py script and closes the current window."""
     try:
         # Construct the full path to face_rec_model_training.py
@@ -43,8 +66,12 @@ def Confirm():
         # Close the current homepage window
     except FileNotFoundError:
         print(f"Error: Script not found at {script_path}")
+        return
     except Exception as e:
         print(f"An error occurred: {e}")
+        return
+
+    
 
 
 customtkinter.set_appearance_mode("dark")
@@ -165,3 +192,5 @@ if cam1.isOpened():
 # if cam2.isOpened():
 #     cam2.release()
 cv2.destroyAllWindows()
+
+
