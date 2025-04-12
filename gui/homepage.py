@@ -11,18 +11,18 @@ import customtkinter
 import sys
 
 def StartNow():
-    """Starts the test_capture.py script and closes the current window."""
+    """Starts the interface_capture_face.py script and closes the current window."""
     try:
-        # Construct the full path to test_capture.py
+        # Construct the full path to interface_capture_face.py
         script_path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
             "src",
-            "test_capture.py"
+            "interface_capture_face.py"
         )
         print(f"Attempting to run: {script_path}")
         subprocess.Popen([sys.executable, script_path])
-        print("test_capture.py started.")
-         # Close the current homepage window
+        print("interface_capture_face.py started.")
+        # Close the current homepage window
     except FileNotFoundError:
         print(f"Error: Script not found at {script_path}")
     except Exception as e:
