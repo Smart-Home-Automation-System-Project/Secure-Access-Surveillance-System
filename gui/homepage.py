@@ -1,3 +1,4 @@
+import subprocess
 import cv2
 import os
 import matplotlib.pyplot as plt
@@ -7,14 +8,28 @@ from PIL import Image as PIL_Image, ImageTk  # Alias Image to PIL_Image
 
 from tkinter import *
 import customtkinter
-
-import src.test_capture as test_capture  # Import the test_capture module
-
+import sys
 
 def StartNow():
-    
-    return
+    """Starts the test_capture.py script and closes the current window."""
+    try:
+        # Construct the full path to test_capture.py
+        script_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "src",
+            "test_capture.py"
+        )
+        print(f"Attempting to run: {script_path}")
+        subprocess.Popen([sys.executable, script_path])
+        print("test_capture.py started.")
+         # Close the current homepage window
+    except FileNotFoundError:
+        print(f"Error: Script not found at {script_path}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
+customtkinter.set_appearance_mode("dark")
+customtkinter.set_default_color_theme("blue")
 
 customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("blue")
@@ -58,7 +73,7 @@ camera_label2 = customtkinter.CTkLabel(frame3_1, text="")  # Label to display do
 camera_label2.pack(fill="both", expand=True)
 
 cam1 = cv2.VideoCapture(0)  # Use 0 for the default web camera
-cam2 = cv2.VideoCapture(1)  # Try 1 for the secondary/door camera
+#cam2 = cv2.VideoCapture(1)  # Try 1 for the secondary/door camera
 
 def update_frame(cam, camera_label):
     ret, frame = cam.read()
@@ -76,12 +91,12 @@ def update_frame(cam, camera_label):
 def start_web_camera():
     update_frame(cam1, camera_label1)
 
-def start_door_camera():
-    update_frame(cam2, camera_label2)
+# def start_door_camera():
+#     update_frame(cam2, camera_label2)
 
 # Start the camera updates
 start_web_camera()
-start_door_camera()
+# start_door_camera()
 
 Dash = customtkinter.CTkLabel(frame1 , text='Dashboard', font=('', 30, 'bold'))
 Dash.pack(pady=25, padx=50)
@@ -125,6 +140,6 @@ root.mainloop()
 # Release camera resources after the main loop
 if cam1.isOpened():
     cam1.release()
-if cam2.isOpened():
-    cam2.release()
+# if cam2.isOpened():
+#     cam2.release()
 cv2.destroyAllWindows()

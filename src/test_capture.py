@@ -120,13 +120,14 @@ def open_capture_window():
 
         update_preview()
 
+print("Face Data Collection GUI")
+
 customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("blue")
 
 root = customtkinter.CTk()
 root.geometry("400x300")
 root.title("Face Data Collection")
-root.resizable(False, False)  # 🔒 Disable resizing
 
 frame5 = customtkinter.CTkFrame(root, width=500, height=300) # Frame right lower
 frame5.pack(fill="both" ,padx=(10,10), pady=(5,10), expand=True)
@@ -153,9 +154,7 @@ SetUp4.grid(column=1, row=4, pady=0, padx=(50,0), sticky="w")
 SetUp5 = customtkinter.CTkLabel(frame5, text='5. Close the Window.', font=('', 15))
 SetUp5.grid(column=1, row=5,  pady=0, padx=(50,0), sticky="w")
 
-Button_Start = customtkinter.CTkButton(frame5, text='Start Data Collection', command="")
+Button_Start = customtkinter.CTkButton(frame5, text="Start Data Collection", command=open_capture_window)
 Button_Start.grid(column=0, row=6,columnspan=3, pady=(20, 10), padx=5)
 
-
 root.mainloop()
-
