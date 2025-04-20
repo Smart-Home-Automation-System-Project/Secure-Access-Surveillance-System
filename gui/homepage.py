@@ -10,8 +10,10 @@ from tkinter import *
 import customtkinter
 import sys
 
-#######################################
-# Popup for user confirmation successfully completed
+
+
+# #######################################
+# # Popup for user confirmation successfully completed
 
 def open_popup(txt): #popup window function
     popup_window = customtkinter.CTkToplevel(root)
@@ -24,21 +26,22 @@ def open_popup(txt): #popup window function
     popup_window.grab_set()  # Make the popup modal
 
 
-#######################################
+# #######################################
 
 
 def StartNow():
-    """Starts the interface_capture_face.py script and closes the current window."""
+    
+    """Starts the gui_capture_face.py script and closes the current window."""
     try:
-        # Construct the full path to interface_capture_face.py
+        # Construct the full path to gui_capture_face.py
         script_path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
             "src",
-            "interface_capture_face.py"
+            "gui_capture_face.py"
         )
         print(f"Attempting to run: {script_path}")
         subprocess.Popen([sys.executable, script_path])
-        print("interface_capture_face.py started.")
+        print("gui_capture_face.py started.")
         # Close the current homepage window
     except FileNotFoundError:
         print(f"Error: Script not found at {script_path}")
@@ -46,7 +49,7 @@ def StartNow():
         print(f"An error occurred: {e}")
 
 def Confirm():
-
+    
     #############################
     # Temp Popup for user confirmation successfully completed
     open_popup("User confirmation successfully completed.")
@@ -64,6 +67,7 @@ def Confirm():
         subprocess.Popen([sys.executable, script_path])
         print("face_rec_model_training.py started.")
         # Close the current homepage window
+        
     except FileNotFoundError:
         print(f"Error: Script not found at {script_path}")
         return

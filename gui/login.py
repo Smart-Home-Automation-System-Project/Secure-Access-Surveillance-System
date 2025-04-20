@@ -1,6 +1,8 @@
 from tkinter import *
 import customtkinter
 
+
+
 def open_popup(txt): #popup window function
     popup_window = customtkinter.CTkToplevel(root)
     popup_window.title("Error")
