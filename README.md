@@ -60,8 +60,7 @@ Add `mqtt_config.json` in the `config/` directory with the following structure:
 ```json
 {
   "broker_ip": "your_mqtt_broker_ip",
-  "broker_port": 1883,
-  "topic": "home/security"
+  "broker_port": 1883
 }
 ```
 
