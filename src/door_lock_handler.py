@@ -34,6 +34,8 @@ class DoorLockHandler:
         """Unlock the door"""
         self.is_locked = False
         self.unlocked_by_pin = by_pin
+        # Send unlock command to MQTT broker
+        self.mqtt.send_door_command("unlock")
         if not by_pin:
             self.unlock_time = datetime.now()
             print("[DOOR] Unlocked for 5 minutes")
@@ -47,6 +49,8 @@ class DoorLockHandler:
         self.unlock_time = None
         self.unlocked_by_pin = False
         self.last_locked_time = datetime.now()
+        # Send lock command to MQTT broker
+        self.mqtt.send_door_command("lock")
         print("[DOOR] Locked")
 
     def check_status(self):
@@ -61,7 +65,7 @@ class DoorLockHandler:
         if pin in self.valid_pins:
             self.unlock(by_pin=True)
             # Log the access attempt
-            self.db.log_access("UNKNOWN", True, unlock_method="PIN")
+            self.db.log_access("Unknown", True, unlock_method="PIN")
             return True
         return False
 

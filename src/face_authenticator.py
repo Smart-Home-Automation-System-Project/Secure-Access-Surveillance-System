@@ -15,7 +15,7 @@ class FaceAuthenticator:
         self.known_face_names = data["names"]
         
         # Initialize camera
-        self.cap = cv2.VideoCapture(0)
+        self.cap = cv2.VideoCapture(0) # 0 - default camera, 1 - external camera
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)  # Lower resolution for faster processing
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
         
@@ -25,7 +25,7 @@ class FaceAuthenticator:
         # Load authorized users from database
         self.authorized_names = []
         try:
-            users = get_authorized_users()
+            users = get_authorized_users() 
             if users is not None:
                 self.authorized_names = users
                 print(f"[INFO] Loaded {len(self.authorized_names)} authorized users")
