@@ -7,3 +7,4 @@ pip3 install matplotlib
 pip3 install imutils
 pip3 install cloudinary
 pip3 install uuid
+pip3 install flask
