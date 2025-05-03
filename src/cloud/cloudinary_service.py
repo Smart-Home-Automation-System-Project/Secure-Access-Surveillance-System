@@ -11,7 +11,7 @@ class CloudinaryService:
     def __init__(self):
         # Load Cloudinary configuration
         try:
-            with open("config/cloudinary_config.json", "r") as f:
+            with open("/Secure-Access-Surveillance-System/", "r") as f:
                 CLOUDINARY_CONFIG = json.load(f)
         except FileNotFoundError:
             raise Exception("[ERROR] cloudinary_config.json not found!")
