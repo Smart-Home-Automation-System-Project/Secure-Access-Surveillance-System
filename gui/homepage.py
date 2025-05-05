@@ -10,8 +10,6 @@ from tkinter import *
 import customtkinter
 import sys
 
-
-
 # #######################################
 # # Popup for user confirmation successfully completed
 

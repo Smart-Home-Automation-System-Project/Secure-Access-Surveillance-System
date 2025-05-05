@@ -10,7 +10,7 @@ from tkinter import messagebox
 preview_loop_id = None
 
 def create_folder(name):
-    dataset_folder = "face_rec_dataset"
+    dataset_folder = "src/face_rec_dataset"
     if not os.path.exists(dataset_folder):
         os.makedirs(dataset_folder)
 
