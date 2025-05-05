@@ -4,9 +4,10 @@ import numpy as np
 import pickle
 import time
 from db.db_service import get_authorized_users
+from camera.camera_manager import CameraManager
 
 class FaceAuthenticator:
-    def __init__(self):
+    def __init__(self, camera_index=0):
         # Load pre-trained face encodings
         print("[INFO] loading encodings...")
         with open("models/face_rec_encodings.pickle", "rb") as f:
@@ -14,10 +15,9 @@ class FaceAuthenticator:
         self.known_face_encodings = data["encodings"]
         self.known_face_names = data["names"]
         
-        # Initialize camera
-        self.cap = cv2.VideoCapture(0) # 0 - default camera, 1 - external camera
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)  # Lower resolution for faster processing
-        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        # Get shared camera instance
+        self.camera = CameraManager.get_instance(camera_index)
+        self.camera.acquire()  # Register this component as a camera user
         
         # Configuration
         self.cv_scaler = 4
@@ -38,8 +38,8 @@ class FaceAuthenticator:
 
     def check_authentication(self):
         """Capture frame and return authentication status"""
-        ret, frame = self.cap.read()
-        if not ret:
+        frame = self.camera.get_frame()
+        if frame is None:
             return "No frame", False
         
         # Resize frame for faster processing
@@ -94,8 +94,8 @@ class FaceAuthenticator:
             self.cleanup()
 
     def cleanup(self):
-        """Release resources"""
-        self.cap.release()
+        if self.camera:
+            self.camera.release()  # Unregister this component
 
 if __name__ == "__main__":
     auth_system = FaceAuthenticator()

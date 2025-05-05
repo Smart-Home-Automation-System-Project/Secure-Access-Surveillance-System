@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 import threading
 import time
-from face_authenticator import FaceAuthenticator
+from auth.face_authenticator import FaceAuthenticator
 from mqtt.mqtt_service import MQTTService
 from db.db_service import DatabaseService, get_pins
 
@@ -34,8 +34,8 @@ class DoorLockHandler:
         """Unlock the door"""
         self.is_locked = False
         self.unlocked_by_pin = by_pin
-        # Send unlock command to MQTT broker
-        self.mqtt.send_door_command("unlock")
+        # Send unlock state to MQTT broker
+        self.mqtt.publish_door_state("unlock")
         if not by_pin:
             self.unlock_time = datetime.now()
             print("[DOOR] Unlocked for 5 minutes")
@@ -49,8 +49,8 @@ class DoorLockHandler:
         self.unlock_time = None
         self.unlocked_by_pin = False
         self.last_locked_time = datetime.now()
-        # Send lock command to MQTT broker
-        self.mqtt.send_door_command("lock")
+        # Send lock state to MQTT broker
+        self.mqtt.publish_door_state("lock")
         print("[DOOR] Locked")
 
     def check_status(self):
