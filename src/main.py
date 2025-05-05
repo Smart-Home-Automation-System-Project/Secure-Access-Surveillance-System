@@ -17,6 +17,7 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"Error: {e}")
     finally:
+    finally:
         door.stop()
         # stop_stream()  # Stop the video stream
         firebase.cleanup()
