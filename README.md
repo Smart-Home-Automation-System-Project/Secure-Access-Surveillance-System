@@ -20,22 +20,42 @@ A smart security system using facial recognition, running on Raspberry Pi with c
 - Internet connection for cloud features
 - MQTT broker (optional for remote monitoring)
 
-## Installation
+## Installation (Ubuntu 22.04)
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/Home_Security_IoT.git
-cd Home_Security_IoT
+git clone https://github.com/Smart-Home-Automation-System-Project/Secure-Access-Surveillance-System
+cd Secure-Access-Surveillance-System
 ```
 
 2. Set up a virtual environment:
 ```bash
-python3 -m venv venv
-source venv/bin/activate  # On Windows: .\venv\Scripts\activate
+python3 -m venv --system-site-packages .venv
+source .venv/bin/activate
 ```
 
-Install dependencies in Raspberry Pi:
-- Run the commands in `commands.txt` to install the required packages
+3. Update packages:
+```bash
+sudo apt update
+sudo apt full-upgrade
+```
+
+4. Install dependencies in the virtual environment:
+```bash
+pip3 install "numpy<2.0"
+pip3 install opencv-python
+pip3 install dlib
+pip3 install face-recognition
+pip3 install paho-mqtt
+pip3 install matplotlib
+pip3 install imutils
+pip3 install cloudinary
+pip3 install uuid
+pip3 install flask
+pip3 install firebase-admin
+pip3 install customtkinter
+pip3 install python-dotenv
+```
 
 ### References
 
@@ -44,42 +64,39 @@ Install dependencies in Raspberry Pi:
 
 ## Configuration
 
-### Adding Authorized Users
-1. Capture face images:
-```bash
-python src/image_capture.py
+Create .env file in the root directory with the following structure:
+```python
+# Cloudinary Configuration
+CLOUDINARY_CLOUD_NAME=<your_cloud_name>
+CLOUDINARY_API_KEY=<your_api_key>
+CLOUDINARY_API_SECRET=<your_api_secret>
+
+# MQTT Configuration
+MQTT_BROKER_IP=<your_mqtt_broker_ip>
+MQTT_BROKER_PORT=1883
+
+# Stream Configuration
+STREAM_HOST=0.0.0.0
+STREAM_PORT=5000
+
+# Firebase Configuration
+FIREBASE_DATABASE_URL=<your_firebase_database_url>
 ```
 
-2. Train the recognition model:
-```bash
-python src/face_rec_model_training.py
-```
+### Cloudinary Configuration
+1. Create a Cloudinary account and set up a new project.
+2. Obtain the Cloudinary credentials (cloud name, API key, API secret) and update the `.env` file.
 
-### MQTT Configuration
-Add `mqtt_config.json` in the `config/` directory with the following structure:
-```json
-{
-  "broker_ip": "your_mqtt_broker_ip",
-  "broker_port": 1883
-}
-```
-
-### Configure Cloudinary
-- Create a Cloudinary account at https://cloudinary.com/
-- Add `cloudinary_config.json` in the `config/` directory with the following structure:
-```json
-{
-  "cloud_name": "your_cloud_name",
-  "api_key": "your_api_key",
-  "api_secret": "your_api_secret"
-}
-```
+### Firebase Configuration
+1. Create a Firebase project and enable the Realtime Database.
+2. Download the service account key JSON file and place it in the `config/` directory.
+3. Update the `.env` file with the Firebase database URL.
 
 ## Usage
 
 1. Start the main system:
 ```bash
-python src/main.py
+python main.py
 ```
 
 2. Available commands: 
@@ -90,19 +107,6 @@ python src/main.py
 
 ## Project Structure
 
-```
-Home_Security_IoT/
-├── src/
-│   ├── cloud/              # Cloud service integration
-│   ├── db/                 # Database operations
-│   ├── mqtt/               # MQTT communication
-│   ├── face_authenticator.py
-│   ├── door_lock_handler.py
-│   └── main.py
-├── config/                 # Configuration files
-├── models/                 # Trained models
-└── face_rec_dataset/      # Training images
-```
 
 ## Development
 
