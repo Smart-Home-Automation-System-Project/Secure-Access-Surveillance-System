@@ -59,6 +59,8 @@ class DatabaseService:
         if not authorized and frame is not None:
             image_path = self.cloud_service.upload_image(frame)
 
+        print(f"[INFO] Access log: {name} | Authorized: {authorized} | Unlock method: {unlock_method} | Image path: {image_path}")
+
         cursor.execute('''
             INSERT INTO access_logs (timestamp, name, authorized, unlock_method, image_path)
             VALUES (?, ?, ?, ?, ?)

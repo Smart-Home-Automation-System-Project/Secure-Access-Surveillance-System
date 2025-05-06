@@ -4,7 +4,7 @@ from db.firebase_service import FirebaseService
 
 if __name__ == "__main__":
     door = DoorLockHandler()
-    firebase = FirebaseService()
+    firebase = FirebaseService() 
     start_stream_thread()
     
     try:

@@ -90,8 +90,8 @@ class DoorLockHandler:
                     # Wait 5 minutes before sending another alert
                     if name != "Unauthorized" and (current_time - last_alert_time) >= 300:  # 5 minutes cooldown
                         print(f"[FACE] Unauthorized access detected: {name}")
-                        ret, frame = self.auth.cap.read()
-                        if ret:
+                        frame = self.auth.camera.get_frame()
+                        if frame is not None:
                             self.db.log_access(name, authorized, frame=frame)
                         else:
                             print("[FACE] Failed to capture frame for alert")
