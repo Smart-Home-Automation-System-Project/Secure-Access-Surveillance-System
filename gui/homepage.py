@@ -1,28 +1,44 @@
 import subprocess
-import cv2
 import os
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-from datetime import datetime
-from PIL import Image as PIL_Image, ImageTk  # Alias Image to PIL_Image
-
+import sys
 from tkinter import *
 import customtkinter
-import sys
 
 # #######################################
 # # Popup for user confirmation successfully completed
 
 def open_popup(txt): #popup window function
     popup_window = customtkinter.CTkToplevel(root)
-    popup_window.title("Error")
+    popup_window.title("Notification")  # Changed from "Error" to "Notification" since it's not actually an error
     popup_window.resizable(False, False)
+    popup_window.geometry("300x150")  # Set a fixed size
+    
+    # Center the popup on the screen
+    popup_window.update_idletasks()  # Update to get correct window dimensions
+    width = popup_window.winfo_width()
+    height = popup_window.winfo_height()
+    x = (popup_window.winfo_screenwidth() // 2) - (width // 2)
+    y = (popup_window.winfo_screenheight() // 2) - (height // 2)
+    popup_window.geometry(f'{width}x{height}+{x}+{y}')
+    
     label = customtkinter.CTkLabel(popup_window, text=txt)
     label.pack(padx=20, pady=20)
     close_button = customtkinter.CTkButton(popup_window, text="Ok", command=popup_window.destroy)
     close_button.pack(pady=10)
-    popup_window.grab_set()  # Make the popup modal
-
+    
+    # Make sure the window is ready before setting grab
+    popup_window.update()
+    
+    # Try-except block to handle the grab_set error
+    try:
+        popup_window.grab_set()  # Make the popup modal
+    except Exception as e:
+        print(f"Warning: Could not set window grab: {e}")
+    
+    # Keep the popup on top
+    popup_window.lift()
+    popup_window.attributes('-topmost', True)
+    popup_window.after(10, lambda: popup_window.attributes('-topmost', False))
 
 # #######################################
 
@@ -34,7 +50,7 @@ def StartNow():
         # Construct the full path to gui_capture_face.py
         script_path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-            "src",
+            "gui",
             "gui_capture_face.py"
         )
         print(f"Attempting to run: {script_path}")
@@ -58,7 +74,7 @@ def Confirm():
         # Construct the full path to face_rec_model_training.py
         script_path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-            "src",
+            "util",
             "face_rec_model_training.py"
         )
         print(f"Attempting to run: {script_path}")
@@ -96,54 +112,56 @@ frame1.pack(side='left', fill='both',  padx=(20,10), pady=20, expand=True)
 frame2 = customtkinter.CTkFrame(Mainframe1, width=600, height=600) # main right frame
 frame2.pack(side='right', fill='both', padx=(10,20), pady=20, expand=True)
 
+# Tab section is kept, but without camera functionality
 tab = customtkinter.CTkTabview(frame2) # Moved tabview to frame1
 tab.pack(fill="both", expand=True)
 
-tab1 = tab.add("Web Camera")
+tab1 = tab.add("Gate Camera")
 tab2 = tab.add("Door Camera")
 
-Title1 = customtkinter.CTkLabel(tab1 , text='Web Camera | LIVE', font=('', 25, 'bold'))
+Title1 = customtkinter.CTkLabel(tab1 , text='Gate Camera | LIVE', font=('', 25, 'bold'))
 Title1.pack(pady=25, padx=40)
 
 Title2 = customtkinter.CTkLabel(tab2 , text='Door Camera | LIVE', font=('', 25, 'bold'))
 Title2.pack(pady=25, padx=40)
 
-frame3 = customtkinter.CTkFrame(tab1 , width=550, height=450) # Frame for web camera feed
+frame3 = customtkinter.CTkFrame(tab1 , width=550, height=450) # Frame for gate camera feed
 frame3.pack(fill='both', padx=(10,10), pady=(0, 20), expand=True)
 
-camera_label1 = customtkinter.CTkLabel(frame3, text="")  # Label to display web camera feed
+camera_label1 = customtkinter.CTkLabel(frame3, text="Camera feed not available")  # Label to display message instead of camera feed
 camera_label1.pack(fill="both", expand=True)
 
 frame3_1 = customtkinter.CTkFrame(tab2 , width=550, height=450) # Frame for door camera feed
 frame3_1.pack(fill='both', padx=(10,10), pady=(0, 20), expand=True)
 
-camera_label2 = customtkinter.CTkLabel(frame3_1, text="")  # Label to display door camera feed
+camera_label2 = customtkinter.CTkLabel(frame3_1, text="Camera feed not available")  # Label to display message instead of camera feed
 camera_label2.pack(fill="both", expand=True)
 
-cam1 = cv2.VideoCapture(0)  # Use 0 for the default web camera
+# Camera capture code removed but commented sections kept
+#cam1 = cv2.VideoCapture(0)  # Use 0 for the default web camera
 #cam2 = cv2.VideoCapture(1)  # Try 1 for the secondary/door camera
 
-def update_frame(cam, camera_label):
-    ret, frame = cam.read()
-    if ret:
-        # Convert the OpenCV frame (BGR) to RGB
-        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        # Convert to PIL Image
-        img = PIL_Image.fromarray(frame_rgb)  # Use the aliased name
-        # Convert to Tkinter PhotoImage
-        img_tk = ImageTk.PhotoImage(image=img)
-        camera_label.imgtk = img_tk  # Keep a reference to prevent garbage collection
-        camera_label.configure(image=img_tk)
-    camera_label.after(10, lambda: update_frame(cam, camera_label)) # Use lambda for correct parameter passing
+# def update_frame(cam, camera_label):
+#     ret, frame = cam.read()
+#     if ret:
+#         # Convert the OpenCV frame (BGR) to RGB
+#         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+#         # Convert to PIL Image
+#         img = PIL_Image.fromarray(frame_rgb)  # Use the aliased name
+#         # Convert to Tkinter PhotoImage
+#         img_tk = ImageTk.PhotoImage(image=img)
+#         camera_label.imgtk = img_tk  # Keep a reference to prevent garbage collection
+#         camera_label.configure(image=img_tk)
+#     camera_label.after(10, lambda: update_frame(cam, camera_label)) # Use lambda for correct parameter passing
 
-def start_web_camera():
-    update_frame(cam1, camera_label1)
+# def start_web_camera():
+#     update_frame(cam1, camera_label1)
 
 # def start_door_camera():
 #     update_frame(cam2, camera_label2)
 
 # Start the camera updates
-start_web_camera()
+# start_web_camera()
 # start_door_camera()
 
 Dash = customtkinter.CTkLabel(frame1 , text='Dashboard', font=('', 30, 'bold'))
@@ -188,11 +206,9 @@ Button_Start.grid(column=3, row=1, pady=(5, 10), padx=5)
 
 root.mainloop()
 
-# Release camera resources after the main loop
-if cam1.isOpened():
-    cam1.release()
+# Release camera resources after the main loop - removed but kept as comments
+# if cam1.isOpened():
+#     cam1.release()
 # if cam2.isOpened():
 #     cam2.release()
-cv2.destroyAllWindows()
-
-
+# cv2.destroyAllWindows()

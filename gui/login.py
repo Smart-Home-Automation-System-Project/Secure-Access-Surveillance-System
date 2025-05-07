@@ -18,7 +18,7 @@ def Login():
     if username == "admin" and password == "1234":
         print("Login successful")
         root.destroy()  # Close the login window
-        import homepage  # Import the homepage module (make sure it's in the same directory)
+        import gui.homepage  # Import the homepage module (make sure it's in the same directory)
     else:
         print("Invalid credentials")
         open_popup("Invalid username or password")

@@ -6,8 +6,14 @@ import customtkinter
 import tkinter as tk
 from tkinter import messagebox
 
+import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from db.db_service import DatabaseService
+
 # Global root
 preview_loop_id = None
+db_service = DatabaseService()
 
 def create_folder(name):
     dataset_folder = "face_rec_dataset"
@@ -68,6 +74,16 @@ def capture_photos_gui(name):
             preview_label.after_cancel(preview_loop_id)
         cap.release()
         capture_window.destroy()
+        
+        # Add user to database as authorized
+        if photo_count > 0:
+            try:
+                # Add user to the database with authorized=True
+                db_service.add_user(name, authorized=True)
+                messagebox.showinfo("Success", f"{name} has been added as an authorized user.")
+            except Exception as e:
+                messagebox.showerror("Database Error", f"Failed to add user to database: {str(e)}")
+        
         messagebox.showinfo("Info", f"Photo capture completed. {photo_count} photos saved for {name}.")
 
     capture_window.bind("<Key>", on_key)
@@ -77,7 +93,7 @@ def capture_photos_gui(name):
 
 def open_capture_window():
     def on_submit():
-        name = entry1.get()
+        name = entry1.get() # Get the name of the user
         if not name.isalpha():
             messagebox.showerror("Invalid Name", "Please enter only alphabetic characters.")
         else:
@@ -106,7 +122,7 @@ customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("blue")
 
 root = customtkinter.CTk()
-root.geometry("400x350")
+root.geometry("400x400")  # Made slightly taller for additional notes
 root.title("Face Data Collection")
 
 frame5 = customtkinter.CTkFrame(root)
@@ -131,7 +147,11 @@ for idx, text in enumerate(instructions, start=1):
     lbl = customtkinter.CTkLabel(frame5, text=text, font=('', 15))
     lbl.grid(column=1, row=idx, pady=0, padx=(50, 0), sticky="w")
 
+note_label = customtkinter.CTkLabel(frame5, text="Note: User will be added as authorized automatically", 
+                                    font=('', 12), text_color="#FFD700")
+note_label.grid(column=0, row=8, columnspan=3, pady=(5, 0), padx=5)
+
 Button_Start = customtkinter.CTkButton(frame5, text="Start Data Collection", command=open_capture_window)
-Button_Start.grid(column=0, row=8, columnspan=3, pady=(20, 10), padx=5)
+Button_Start.grid(column=0, row=9, columnspan=3, pady=(10, 10), padx=5)
 
 root.mainloop()
