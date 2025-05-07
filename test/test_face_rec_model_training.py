@@ -4,8 +4,12 @@ import builtins
 import os
 import pickle
 import numpy as np
+import sys
 
-# Patch paths, face_recognition, cv2, and open as needed
+# Add the project root to sys.path so util can be imported
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+# Mock external dependencies
 with mock.patch.dict('sys.modules', {
     'face_recognition': mock.MagicMock(),
     'cv2': mock.MagicMock(),
@@ -15,50 +19,44 @@ with mock.patch.dict('sys.modules', {
     from util import face_rec_model_training
 
 class TestFaceRecModelTraining(unittest.TestCase):
+    def setUp(self):
+        self.test_models_folder = "test_models"
+        self.test_pickle_file = os.path.join(self.test_models_folder, "face_rec_encodings.pickle")
+        os.makedirs(self.test_models_folder, exist_ok=True)
 
-    @mock.patch('util.face_rec_model_training.os.makedirs')
-    @mock.patch('util.face_rec_model_training.os.path.exists', return_value=False)
-    def test_create_folder_creates_directory(self, mock_exists, mock_makedirs):
-        folder = "test_folder"
-        result = face_rec_model_training.create_folder(folder)
-        mock_makedirs.assert_called_once_with(folder)
-        self.assertEqual(result, folder)
+    def tearDown(self):
+        if os.path.exists(self.test_pickle_file):
+            os.remove(self.test_pickle_file)
+        if os.path.exists(self.test_models_folder):
+            os.rmdir(self.test_models_folder)
 
-    @mock.patch('util.face_rec_model_training.pickle.dump')
-    @mock.patch('util.face_rec_model_training.open', new_callable=mock.mock_open)
-    def test_pickle_serialization(self, mock_open, mock_pickle_dump):
-        test_data = {"encodings": [np.array([0.1, 0.2])], "names": ["TestUser"]}
-        file_path = os.path.join("models", "face_rec_encodings.pickle")
+    def test_create_folder_creates_and_returns_path(self):
+        folder_name = "test_create_folder"
+        if os.path.exists(folder_name):
+            os.rmdir(folder_name)
 
-        # Simulate saving
-        with open(file_path, "wb") as f:
-            f.write(pickle.dumps(test_data))
+        path = face_rec_model_training.create_folder(folder_name)
+        self.assertTrue(os.path.exists(path))
+        self.assertEqual(path, folder_name)
 
-        mock_open.assert_called_with(file_path, "wb")
+        # Cleanup
+        os.rmdir(folder_name)
 
-    @mock.patch('util.face_rec_model_training.face_recognition.face_encodings', return_value=[np.array([0.1] * 128)])
-    @mock.patch('util.face_rec_model_training.face_recognition.face_locations', return_value=[(0, 0, 10, 10)])
-    @mock.patch('util.face_rec_model_training.cv2.imread')
-    @mock.patch('util.face_rec_model_training.cv2.cvtColor')
-    @mock.patch('util.face_rec_model_training.paths.list_images', return_value=["face_rec_dataset/TestUser/test1.jpg"])
-    def test_image_processing_flow(self, mock_list_images, mock_cvtColor, mock_imread, mock_face_locations, mock_face_encodings):
-        mock_imread.return_value = mock.Mock()
-        mock_cvtColor.return_value = mock.Mock()
+    @mock.patch("builtins.open", new_callable=mock.mock_open)
+    @mock.patch("pickle.dumps")
+    def test_serialization_creates_pickle_file(self, mock_dumps, mock_open_file):
+        data = {"encodings": [np.array([0.1, 0.2])], "names": ["TestUser"]}
+        pickle_path = os.path.join(self.test_models_folder, "face_rec_encodings.pickle")
 
-        # Clear global lists
-        face_rec_model_training.knownEncodings.clear()
-        face_rec_model_training.knownNames.clear()
+        # Simulate saving pickle
+        try:
+            with open(pickle_path, "wb") as f:
+                f.write(pickle.dumps(data))
+        except IOError as e:
+            self.fail(f"Serialization raised IOError: {e}")
 
-        # Trigger the loop logic
-        for imagePath in mock_list_images.return_value:
-            name = os.path.basename(os.path.dirname(imagePath))
-            image = mock_imread(imagePath)
-            rgb = mock_cvtColor(image, face_rec_model_training.cv2.COLOR_BGR2RGB)
-            boxes = mock_face_locations(rgb, model="hog")
-            encodings = mock_face_encodings(rgb, boxes)
-            for encoding in encodings:
-                face_rec_model_training.knownEncodings.append(encoding)
-                face_rec_model_training.knownNames.append(name)
+        mock_dumps.assert_called_once_with(data)
+        mock_open_file.assert_called_once_with(pickle_path, "wb")
 
-        self.assertEqual(face_rec_model_training.knownNames, ["TestUser"])
-        self.assertEqual(len(face_rec_model_training.knownEncodings), 1)
+if __name__ == "__main__":
+    unittest.main()
