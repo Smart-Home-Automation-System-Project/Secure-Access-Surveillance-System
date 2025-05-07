@@ -1,5 +1,3 @@
-# test/test_login.py
-
 import unittest
 from gui.login import login_user  # Adjust based on actual function in login.py
 

@@ -1,8 +1,9 @@
 import sys
 import pytest
+import os
 from unittest.mock import patch, MagicMock
 
-sys.path.append(r"E:\sem 04\Secure-Access-Surveillance-System")
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from mqtt.mqtt_service import MQTTService
 

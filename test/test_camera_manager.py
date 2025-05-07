@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import patch, MagicMock
 from camera.camera_manager import CameraManager
 

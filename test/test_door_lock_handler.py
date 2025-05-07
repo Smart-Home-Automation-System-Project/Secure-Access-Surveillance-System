@@ -2,10 +2,10 @@ import sys
 import pytest
 from unittest.mock import patch, MagicMock
 from datetime import datetime, timedelta
-
-sys.path.append(r"E:\sem 04\Secure-Access-Surveillance-System")  # your root path
-
 from handlers.door_lock_handler import DoorLockHandler
+import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 @pytest.fixture
 def handler():
