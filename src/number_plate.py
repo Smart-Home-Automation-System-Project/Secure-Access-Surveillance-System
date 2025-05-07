@@ -1,139 +1,396 @@
 import cv2
-import numpy as np
 import os
-import pytesseract
 from datetime import datetime
+import time
+import shutil
+import easyocr
 import re
+import threading
+import queue
+from concurrent.futures import ThreadPoolExecutor
 
-# Configure pytesseract path if needed
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+# Configure paths
+PLATE_FOLDER = "plate/"
+VEHICLE_FOLDER = "plate1/"
+SUSPECT_FOLDER = "plate1/suspect/"
+MOST_CLEARED_FOLDER = "most_cleared/"
+CAPTURE_INTERVAL = 5  # seconds
+
+# Create folders if they don't exist
+os.makedirs(PLATE_FOLDER, exist_ok=True)
+os.makedirs(VEHICLE_FOLDER, exist_ok=True)
+os.makedirs(SUSPECT_FOLDER, exist_ok=True)
+os.makedirs(os.path.join(PLATE_FOLDER, MOST_CLEARED_FOLDER), exist_ok=True)
+os.makedirs(os.path.join(VEHICLE_FOLDER, MOST_CLEARED_FOLDER), exist_ok=True)
+
+# Global flag for controlling threads
+running = True
+stop_queue = queue.Queue()
+
+# Known license plates (add your actual plates here)
+KNOWN_PLATES = ['MH20EE7602']
 
 
 class LicensePlateRecognizer:
-    def __init__(self, reference_plate=None):
-        self.reference_plate = reference_plate
-        self.output_dir = "output_plates"
-        self.temp_dir = "temp_images"
-        os.makedirs(self.output_dir, exist_ok=True)
-        os.makedirs(self.temp_dir, exist_ok=True)
-
-        # Initialize plate detector (using Haar cascade as example)
+    def __init__(self):
+        self.reader = easyocr.Reader(['en'])
+        self.last_plate = ""
         self.plate_cascade = cv2.CascadeClassifier(
             cv2.data.haarcascades + 'haarcascade_russian_plate_number.xml')
-
-    def preprocess_image(self, img):
-        """Enhance image for better OCR results"""
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        blurred = cv2.GaussianBlur(gray, (3, 3), 0)
-        thresh = cv2.adaptiveThreshold(blurred, 255,
-                                       cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                       cv2.THRESH_BINARY_INV, 11, 2)
-        kernel = np.ones((1, 1), np.uint8)
-        processed = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
-        return processed
+        if self.plate_cascade.empty():
+            raise Exception("Failed to load Haar Cascade classifier")
+        self.last_capture_time = 0
 
     def detect_license_plate(self, frame):
-        """Detect license plate in the frame"""
+        """Detect license plate using Haar Cascade"""
+        # Convert to grayscale
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        plates = self.plate_cascade.detectMultiScale(gray, scaleFactor=1.1,
-                                                     minNeighbors=5,
-                                                     minSize=(100, 30))
 
-        for (x, y, w, h) in plates:
-            # Ensure we have a reasonable aspect ratio for license plates
-            aspect_ratio = w / h
-            if 2 < aspect_ratio < 6:
-                plate_img = frame[y:y+h, x:x+w]
-                return plate_img, (x, y, w, h)
-        return None, None
+        # Detect plates with adjusted parameters
+        plates = self.plate_cascade.detectMultiScale(
+            gray,
+            scaleFactor=1.1,
+            minNeighbors=5,
+            minSize=(100, 30))
 
-    def extract_plate_number(self, plate_img):
-        """Extract text from license plate image"""
-        # Preprocess the license plate image
-        processed = self.preprocess_image(plate_img)
+        return plates
 
-        # Use Tesseract OCR to extract text
-        custom_config = r'--oem 3 --psm 7 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-        text = pytesseract.image_to_string(processed, config=custom_config)
+    def save_images(self, frame, plate_roi):
+        """Save full vehicle and plate images with timestamp"""
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
 
-        # Clean up the extracted text
-        cleaned_text = re.sub(r'[^A-Z0-9]', '', text.upper())
-        return cleaned_text
+        # Save full vehicle image
+        vehicle_path = os.path.join(VEHICLE_FOLDER, f"vehicle_{timestamp}.jpg")
+        cv2.imwrite(vehicle_path, frame)
+
+        # Save license plate image
+        plate_path = os.path.join(PLATE_FOLDER, f"plate_{timestamp}.jpg")
+        cv2.imwrite(plate_path, plate_roi)
+
+        return vehicle_path, plate_path
 
     def process_frame(self, frame):
-        """Process each frame for license plate recognition"""
-        plate_img, coords = self.detect_license_plate(frame)
-        if plate_img is not None:
-            # Save temporary images
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-            plate_path = os.path.join(self.temp_dir, f"plate_{timestamp}.jpg")
-            full_img_path = os.path.join(
-                self.temp_dir, f"full_{timestamp}.jpg")
+        """Process a single frame for license plate recognition"""
+        # Detect license plates
+        plates = self.detect_license_plate(frame)
 
-            cv2.imwrite(plate_path, plate_img)
-            cv2.imwrite(full_img_path, frame)
+        for (x, y, w, h) in plates:
+            # Draw rectangle around plate
+            cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
 
-            # Extract plate number
-            plate_number = self.extract_plate_number(plate_img)
-            print(f"Detected plate: {plate_number}")
+            # Extract plate ROI
+            plate_roi = frame[y:y+h, x:x+w]
 
-            # Verify plate number
-            if self.reference_plate and plate_number == self.reference_plate:
-                print("YES - Plate matches reference")
-                # Delete temporary images
-                os.remove(plate_path)
-                os.remove(full_img_path)
-                return "YES", plate_number
-            else:
-                print("NO - Plate doesn't match or no reference provided")
-                # Save to output directory
-                output_plate_path = os.path.join(
-                    self.output_dir, f"plate_{timestamp}.jpg")
-                output_full_path = os.path.join(
-                    self.output_dir, f"full_{timestamp}.jpg")
-                os.rename(plate_path, output_plate_path)
-                os.rename(full_img_path, output_full_path)
-                return "NO", plate_number
-        return None, None
+            vehicle_path, plate_path = self.save_images(frame, plate_roi)
 
-    def clean_temp_files(self):
-        """Clean up temporary files"""
-        for filename in os.listdir(self.temp_dir):
-            file_path = os.path.join(self.temp_dir, filename)
+            print(f"Vehicle image saved: {vehicle_path}")
+            print(f"Plate image saved: {plate_path}")
+
+        return frame
+
+    def license_plate_recognition(self):
+        """Main function to run license plate recognition"""
+        # Open video capture
+        cap = cv2.VideoCapture(1)
+        if not cap.isOpened():
+            print("Error: Could not open video capture")
+            return
+
+        try:
+            while running:
+                current_time = time.time()
+                if current_time - self.last_capture_time >= CAPTURE_INTERVAL:
+                    ret, frame = cap.read()
+                    if not ret:
+                        print("Error: Could not read frame")
+                        break
+
+                # Process frame
+                    processed_frame = self.process_frame(frame)
+                    self.last_capture_time = current_time
+                else:
+                    # Still read frame to keep video smooth, but don't process
+                    ret, frame = cap.read()
+                    if not ret:
+                        print("Error: Could not read frame")
+                        break
+                    processed_frame = frame
+                # Display result
+
+                cv2.imshow('License Plate Recognition', processed_frame)
+
+                # Exit on 'q' key
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    stop_queue.put("stop")
+                    break
+        finally:
+            cap.release()
+            cv2.destroyAllWindows()
+
+    def calculate_sharpness(self, image_path):
+        """Calculate sharpness score using Laplacian variance"""
+        image = cv2.imread(image_path)
+        if image is None:
+            return 0
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        return cv2.Laplacian(gray, cv2.CV_64F).var()
+
+    def get_clearest_image(self, folder_path):
+        """Find the clearest image in a folder"""
+        image_files = [f for f in os.listdir(folder_path) if f.lower().endswith(
+            ('.png', '.jpg', '.jpeg', '.bmp', '.tiff'))]
+
+        if not image_files:
+            print(
+                f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - No images found in the folder.")
+            return None
+
+        sharpness_scores = []
+        for img_file in image_files:
+            img_path = os.path.join(folder_path, img_file)
+            score = self.calculate_sharpness(img_path)
+            sharpness_scores.append((img_file, score))
+
+        # Sort by sharpness score (descending)
+        sharpness_scores.sort(key=lambda x: x[1], reverse=True)
+
+        return sharpness_scores[0][0]  # Return filename of clearest image
+
+    def process_folder(self, input_folder):
+        """Process a single folder: find clearest image, copy it, delete others"""
+        # Validate folder exists
+        if not os.path.isdir(input_folder):
+            print(
+                f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - Error: The specified folder does not exist.")
+            return
+
+        # Create output folder if it doesn't exist
+        output_folder = os.path.join(input_folder, MOST_CLEARED_FOLDER)
+        os.makedirs(output_folder, exist_ok=True)
+
+        # Find clearest image
+        clearest_image = self.get_clearest_image(input_folder)
+
+        if clearest_image:
+            # Source and destination paths
+            src_path = os.path.join(input_folder, clearest_image)
+            dst_path = os.path.join(output_folder, clearest_image)
+
+            # Copy the image (use copy2 to preserve metadata)
+            shutil.copy2(src_path, dst_path)
+            print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - Copied clearest image '{clearest_image}' to '{output_folder}'")
+
+            # Delete all source images except the clearest one
+            image_files = [f for f in os.listdir(input_folder) if f.lower().endswith(
+                ('.png', '.jpg', '.jpeg', '.bmp', '.tiff'))]
+            for img_file in image_files:
+                if img_file != clearest_image:
+                    img_path = os.path.join(input_folder, img_file)
+                    os.remove(img_path)
+                    print(
+                        f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - Deleted source image: '{img_file}'")
+            img_path = os.path.join(input_folder, clearest_image)
+            os.remove(img_path)
+        else:
+            print(
+                f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - No valid images found to process.")
+
+    def clear_folder_contents(self, folder_path):
+        """Clear contents of a folder"""
+        for filename in os.listdir(folder_path):
+            file_path = os.path.join(folder_path, filename)
             try:
-                if os.path.isfile(file_path):
+                if os.path.isfile(file_path) or os.path.islink(file_path):
                     os.unlink(file_path)
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path)
             except Exception as e:
-                print(f"Error deleting {file_path}: {e}")
+                print(f"Failed to delete {file_path}. Reason: {e}")
+
+    def clear_plates(self):
+        """Monitor and process plate folder"""
+        input_folder = os.path.abspath(PLATE_FOLDER).strip()
+        print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - Starting plate image processing monitor...")
+        print(
+            f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - Monitoring folder: {input_folder}")
+
+        try:
+            while running:
+                self.process_folder(input_folder)
+                # Reduced sleep time for more responsive processing
+                time.sleep(5)
+        except Exception as e:
+            print(f"Error in clear_plates: {e}")
+        finally:
+            print("Plate processing stopped")
+
+    def clear_vehicles(self):
+        """Monitor and process vehicle folder"""
+        input_folder = os.path.abspath(VEHICLE_FOLDER).strip()
+        print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - Starting vehicle image processing monitor...")
+        print(
+            f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - Monitoring folder: {input_folder}")
+
+        try:
+            while running:
+                self.process_folder(input_folder)
+                # Reduced sleep time for more responsive processing
+                time.sleep(5)
+        except Exception as e:
+            print(f"Error in clear_vehicles: {e}")
+        finally:
+            print("Vehicle processing stopped")
+
+    def text_recognize(self):
+        """Perform OCR on the clearest plate image"""
+        folder_path = os.path.join(os.path.abspath(
+            PLATE_FOLDER), MOST_CLEARED_FOLDER)
+        result = []
+
+        for filename in os.listdir(folder_path):
+            if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff')):
+                image_path = os.path.join(folder_path, filename)
+                result = self.reader.readtext(image_path, detail=0)
+                os.remove(image_path)  # Remove after processing
+
+        return result[0] if result else None
+
+    def move_to_suspect(self):
+        """Move vehicle images to suspect folder"""
+        source_folder = os.path.join(os.path.abspath(
+            VEHICLE_FOLDER), MOST_CLEARED_FOLDER)
+        for filename in os.listdir(source_folder):
+            if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff')):
+                src_path = os.path.join(source_folder, filename)
+                dst_path = os.path.join(
+                    os.path.abspath(SUSPECT_FOLDER), filename)
+                shutil.copy2(src_path, dst_path)
+
+    def ocr_processing(self):
+        """Main OCR processing loop"""
+        print("OCR processing started")
+        try:
+            while running:
+                result = self.text_recognize()
+
+                if result is not None:
+                    result = result.replace(" ", "")
+                    result = re.sub(r'[^A-Z0-9]', '', result.upper())
+
+                print("OCR result: ", result)
+
+                if result is None:
+                    print("No number plate detected")
+                    # Clear both folders
+                    self.clear_folder_contents(os.path.join(
+                        PLATE_FOLDER, MOST_CLEARED_FOLDER))
+                    self.clear_folder_contents(os.path.join(
+                        VEHICLE_FOLDER, MOST_CLEARED_FOLDER))
+                elif self.last_plate == "" or result != self.last_plate:
+                    if result in KNOWN_PLATES:
+                        print("Known number plate detected")
+                        self.last_plate = result
+                        # Clear both folders
+                        self.clear_folder_contents(os.path.join(
+                            PLATE_FOLDER, MOST_CLEARED_FOLDER))
+                        self.clear_folder_contents(os.path.join(
+                            VEHICLE_FOLDER, MOST_CLEARED_FOLDER))
+                    else:
+                        print("Unknown number plate detected")
+                        self.last_plate = result
+                        # Clear plate folder, move vehicle images to suspect
+                        now = datetime.now()
+                        timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
+                        # Text to write
+                        text_to_write = f"suspect vehicle {timestamp} is attemp to {result}\n"
+                        # Open the text file in append mode and write
+                        with open("log.txt", "a") as file:
+                            file.write(text_to_write)
+                        self.clear_folder_contents(os.path.join(
+                            PLATE_FOLDER, MOST_CLEARED_FOLDER))
+                        self.move_to_suspect()
+                elif self.last_plate == result:
+                    print("Same plate as before")
+                    self.clear_folder_contents(os.path.join(
+                        PLATE_FOLDER, MOST_CLEARED_FOLDER))
+                    self.clear_folder_contents(os.path.join(
+                        VEHICLE_FOLDER, MOST_CLEARED_FOLDER))
+
+                # Reduced sleep time for more responsive processing
+                time.sleep(5)
+        except Exception as e:
+            print(f"Error in OCR processing: {e}")
+        finally:
+            print("OCR processing stopped")
+
+
+def monitor_input():
+    """Monitor for 'stop' command"""
+    global running
+    while True:
+        user_input = input().strip().lower()
+        if user_input == "stop":
+            running = False
+            stop_queue.put("stop")
+            break
 
 
 def main():
-    # Initialize with a reference plate number (optional)
-    reference_plate = "MH20EE7602"  # Set to None if you don't have a reference
-    recognizer = LicensePlateRecognizer(reference_plate)
+    global running
 
-    # Initialize video capture (0 for webcam, or video file path)
-    cap = cv2.VideoCapture(0)
+    recognizer = LicensePlateRecognizer()
 
-    try:
-        while True:
-            ret, frame = cap.read()
-            if not ret:
+    # Start all processes in separate threads
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        # Start the license plate recognition
+        lpr_future = executor.submit(recognizer.license_plate_recognition)
+
+        # Start the folder monitors
+        plates_future = executor.submit(recognizer.clear_plates)
+        vehicles_future = executor.submit(recognizer.clear_vehicles)
+
+        # Start the OCR processing
+        ocr_future = executor.submit(recognizer.ocr_processing)
+
+        # Start input monitoring
+        input_future = executor.submit(monitor_input)
+
+        # Wait for any of the processes to complete or stop command
+        while running:
+            try:
+                # Check if any thread has raised an exception
+                if lpr_future.done():
+                    lpr_future.result()  # This will raise any exception that occurred
+                if plates_future.done():
+                    plates_future.result()
+                if vehicles_future.done():
+                    vehicles_future.result()
+                if ocr_future.done():
+                    ocr_future.result()
+                if input_future.done():
+                    input_future.result()
+                    break
+
+                # Check for stop command from other threads
+                if not stop_queue.empty():
+                    running = False
+                    break
+
+                time.sleep(1)
+            except Exception as e:
+                print(f"Error in main execution: {e}")
+                running = False
                 break
 
-            # Process the frame
-            status, plate_number = recognizer.process_frame(frame)
+    print("Shutting down all processes...")
 
-            # Display results
-            cv2.imshow('License Plate Recognition', frame)
+    # Clean up
+    recognizer.clear_folder_contents(
+        os.path.join(PLATE_FOLDER, MOST_CLEARED_FOLDER))
+    recognizer.clear_folder_contents(
+        os.path.join(VEHICLE_FOLDER, MOST_CLEARED_FOLDER))
 
-            # Exit on 'q' key
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-    finally:
-        cap.release()
-        cv2.destroyAllWindows()
-        recognizer.clean_temp_files()
+    print("System shutdown complete")
 
 
 if __name__ == "__main__":
