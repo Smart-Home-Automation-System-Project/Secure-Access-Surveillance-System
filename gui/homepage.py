@@ -3,6 +3,13 @@ import os
 import sys
 from tkinter import *
 import customtkinter
+import shutil
+from tkinter import messagebox
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from db.db_service import DatabaseService
+
+db_service = DatabaseService()
 
 # #######################################
 # # Popup for user confirmation successfully completed
@@ -63,15 +70,42 @@ def StartNow():
         print(f"An error occurred: {e}")
 
 def Confirm():
-    
-    #############################
-    # Temp Popup for user confirmation successfully completed
-    open_popup("User confirmation successfully completed.")
-    #############################
-
-    """Starts the face_rec_model_training.py script and closes the current window."""
+    """
+    Trains the face recognition model and adds user to the database as authorized.
+    """
     try:
-        # Construct the full path to face_rec_model_training.py
+        # Get list of folders in face_rec_dataset directory (each folder is a user)
+        dataset_folder = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "face_rec_dataset"
+        )
+        
+        if not os.path.exists(dataset_folder):
+            open_popup("No users found. Please add a user first.")
+            return
+            
+        # Get the most recently modified folder (newest user)
+        user_folders = [os.path.join(dataset_folder, d) for d in os.listdir(dataset_folder) 
+                        if os.path.isdir(os.path.join(dataset_folder, d))]
+        
+        if not user_folders:
+            open_popup("No users found. Please add a user first.")
+            return
+            
+        # Sort by modification time (newest first)
+        latest_user_folder = max(user_folders, key=os.path.getmtime)
+        username = os.path.basename(latest_user_folder)
+        
+        # Add user to database
+        db_service = DatabaseService()
+        try:
+            db_service.add_user(username, authorized=True)
+            print(f"User {username} added to database as authorized.")
+        except Exception as e:
+            print(f"Failed to add user to database: {str(e)}")
+            # If there's an error adding user (like duplicate), continue anyway
+        
+        # Start face recognition model training
         script_path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
             "util",
@@ -80,17 +114,19 @@ def Confirm():
         print(f"Attempting to run: {script_path}")
         subprocess.Popen([sys.executable, script_path])
         print("face_rec_model_training.py started.")
-        # Close the current homepage window
+        
+        # Show confirmation popup
+        open_popup(f"User {username} has been confirmed and added as authorized.")
         
     except FileNotFoundError:
-        print(f"Error: Script not found at {script_path}")
+        print(f"Error: Script or directory not found")
+        open_popup("Error: Could not find necessary files or directories.")
         return
     except Exception as e:
         print(f"An error occurred: {e}")
+        open_popup(f"An error occurred: {str(e)}")
         return
-
     
-
 
 customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("blue")

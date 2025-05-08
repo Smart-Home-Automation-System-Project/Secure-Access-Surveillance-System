@@ -75,14 +75,14 @@ def capture_photos_gui(name):
         cap.release()
         capture_window.destroy()
         
-        # Add user to database as authorized
-        if photo_count > 0:
-            try:
-                # Add user to the database with authorized=True
-                db_service.add_user(name, authorized=True)
-                messagebox.showinfo("Success", f"{name} has been added as an authorized user.")
-            except Exception as e:
-                messagebox.showerror("Database Error", f"Failed to add user to database: {str(e)}")
+        # # Add user to database as authorized
+        # if photo_count > 0:
+        #     try:
+        #         # Add user to the database with authorized=True
+        #         db_service.add_user(name, authorized=True)
+        #         messagebox.showinfo("Success", f"{name} has been added as an authorized user.")
+        #     except Exception as e:
+        #         messagebox.showerror("Database Error", f"Failed to add user to database: {str(e)}")
         
         messagebox.showinfo("Info", f"Photo capture completed. {photo_count} photos saved for {name}.")
 
