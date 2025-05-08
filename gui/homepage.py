@@ -127,6 +127,67 @@ def Confirm():
         open_popup(f"An error occurred: {str(e)}")
         return
     
+def load_users():
+    """Load all users from the database"""
+    users_list = db_service.get_all_users()  # You'll need to add this method to db_service
+    return users_list
+
+def remove_user():
+    """Delete selected user from the database and remove their images"""
+    if not user_listbox.curselection():
+        open_popup("Please select a user to delete")
+        return
+    
+    selected_index = user_listbox.curselection()[0]
+    selected_user = user_listbox.get(selected_index)
+    
+    # Confirm before deleting
+    confirm = messagebox.askyesno("Confirm Deletion", 
+                                  f"Are you sure you want to delete user '{selected_user}'?\n\n"
+                                  "This will permanently remove:\n"
+                                  "1. User's database record\n"
+                                  "2. All captured facial images\n\n"
+                                  "This action cannot be undone.")
+    
+    if not confirm:
+        return
+        
+    try:
+        # 1. Delete from database
+        db_service.remove_user(selected_user)
+        
+        # 2. Delete user's images folder
+        dataset_folder = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "face_rec_dataset", 
+            selected_user
+        )
+        if os.path.exists(dataset_folder):
+            shutil.rmtree(dataset_folder)
+            
+        # 3. Retrain the model (after deleting a user)
+        script_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "util",
+            "face_rec_model_training.py"
+        )
+        subprocess.Popen([sys.executable, script_path])
+        
+        # 4. Update the listbox
+        refresh_user_list()
+        
+        open_popup(f"User '{selected_user}' has been deleted successfully")
+        
+    except Exception as e:
+        open_popup(f"Error deleting user: {str(e)}")
+        print(f"Error deleting user: {e}")
+
+def refresh_user_list():
+    """Refresh the user list in the listbox"""
+    user_listbox.delete(0, END)  # Clear current list
+    users = load_users()
+    for user in users:
+        user_listbox.insert(END, user)
 
 customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("blue")
@@ -135,7 +196,7 @@ customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("blue")
 
 root = customtkinter.CTk()
-root.geometry("1200x600")
+root.geometry("1200x700")
 root.title("Login Interface")
 root.resizable(False, False)  # 🔒 Disable resizing
 
@@ -209,27 +270,10 @@ frame4.pack(fill="both", padx=(10,10), pady=(10,5), expand=True)
 frame5 = customtkinter.CTkFrame(frame1, width=600, height=200) # Frame right lower
 frame5.pack(fill="both" ,padx=(10,10), pady=(5,10), expand=True)
 
-
-
 frame5.grid_columnconfigure((0, 1, 2, 3), weight=1)
 
 SetUp = customtkinter.CTkLabel(frame5, text='Add User', font=('', 20, 'bold'))
 SetUp.grid(column=0, row=0, pady=(20, 5), padx=5 )
-
-# SetUp1 = customtkinter.CTkLabel(frame5, text='1. Add user name.', font=('', 15))
-# SetUp1.grid(column=1, row=1, pady=0, padx=(50,0), sticky="w")
-
-# SetUp2 = customtkinter.CTkLabel(frame5, text='2. Capture 8 images of user.', font=('', 15))
-# SetUp2.grid(column=1, row=2, pady=0, padx=(50,0), sticky="w")
-
-# SetUp3 = customtkinter.CTkLabel(frame5, text='3. Press "Space" to capture image.', font=('', 15))
-# SetUp3.grid(column=1, row=3,  pady=0, padx=(50,0), sticky="w")
-
-# SetUp4 = customtkinter.CTkLabel(frame5, text='4. Press "Q" to exit.', font=('', 15))
-# SetUp4.grid(column=1, row=4, pady=0, padx=(50,0), sticky="w")
-
-# SetUp5 = customtkinter.CTkLabel(frame5, text='5. Click "Submit" button to save images.', font=('', 15))
-# SetUp5.grid(column=1, row=5,  pady=0, padx=(50,0), sticky="w")
 
 Button_Start = customtkinter.CTkButton(frame5, text='Stat Now', command= StartNow)
 Button_Start.grid(column=0, row=1, pady=(5, 10), padx=5)
@@ -239,6 +283,49 @@ SetUp.grid(column=3, row=0, pady=(20, 5), padx=5 )
 
 Button_Start = customtkinter.CTkButton(frame5, text='Confirm', command= Confirm)
 Button_Start.grid(column=3, row=1, pady=(5, 10), padx=5)
+
+# User Management Section in frame4
+user_management_label = customtkinter.CTkLabel(frame4, text="User Management", font=('', 20, 'bold'))
+user_management_label.pack(pady=(15, 10))
+
+user_frame = customtkinter.CTkFrame(frame4)
+user_frame.pack(fill="both", padx=20, pady=10, expand=True)
+
+# Create a scrollable listbox for users
+user_list_frame = customtkinter.CTkFrame(user_frame)
+user_list_frame.pack(side="left", fill="both", expand=True, padx=10, pady=10)
+
+user_list_label = customtkinter.CTkLabel(user_list_frame, text="Registered Users:", font=('', 16))
+user_list_label.pack(pady=(5, 5), anchor="w")
+
+# Create a special scrollable frame for the listbox since CTk doesn't have a listbox
+listbox_frame = Frame(user_list_frame, bg="#2b2b2b")  # Match dark theme
+listbox_frame.pack(fill="both", expand=True)
+
+scrollbar = Scrollbar(listbox_frame)
+scrollbar.pack(side=RIGHT, fill=Y)
+
+user_listbox = Listbox(listbox_frame, yscrollcommand=scrollbar.set, 
+                       bg="#2b2b2b", fg="white", selectbackground="#1f538d",
+                       font=('', 12), relief="flat", borderwidth=0)
+user_listbox.pack(side=LEFT, fill=BOTH, expand=True)
+scrollbar.config(command=user_listbox.yview)
+
+# Buttons for user management
+button_frame = customtkinter.CTkFrame(user_frame)
+button_frame.pack(side="right", fill="y", padx=10, pady=10)
+
+delete_button = customtkinter.CTkButton(button_frame, text="Delete User", 
+                                        command=remove_user, 
+                                        fg_color="#E74C3C")  # Red color for delete
+delete_button.pack(padx=10, pady=10)
+
+refresh_button = customtkinter.CTkButton(button_frame, text="Refresh List", 
+                                         command=refresh_user_list)
+refresh_button.pack(padx=10, pady=10)
+
+# Load users initially
+refresh_user_list()
 
 root.mainloop()
 

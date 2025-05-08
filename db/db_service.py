@@ -98,7 +98,7 @@ class DatabaseService:
         conn.close()
 
     def get_authorized_users(self):
-        """Get user details"""
+        """Get all authorized users"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
@@ -108,9 +108,10 @@ class DatabaseService:
             WHERE authorized = 1
         ''')
         
-        user = cursor.fetchone()
+        users = cursor.fetchall()
         conn.close()
-        return user
+        # Convert tuple of tuples to list of names
+        return [user[0] for user in users]
     
     def add_pin(self, pin):
         """Add a new authorized PIN to the database"""
@@ -231,8 +232,25 @@ class DatabaseService:
         
         conn.close()
         return all_data
-
     
+    def get_all_users(self):
+        """Get all users from the database"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        try:
+            cursor.execute("""
+                SELECT name
+                FROM users
+                ORDER BY name
+            """)
+            users = cursor.fetchall()
+            # Convert tuple of tuples to list of names
+            return [user[0] for user in users]
+        except Exception as e:
+            print(f"Error retrieving users: {e}")
+            return []
+        finally:
+            conn.close()
 
 def print_recent_access_attempts():
     db = DatabaseService()
