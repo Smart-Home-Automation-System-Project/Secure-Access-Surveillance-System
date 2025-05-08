@@ -55,6 +55,7 @@ pip3 install flask
 pip3 install firebase-admin
 pip3 install customtkinter
 pip3 install python-dotenv
+pip install pytest pytest-cov mock
 ```
 
 ### References
@@ -112,7 +113,7 @@ python main.py
 
 ### Running Tests
 ```bash
-python -m pytest tests/
+python -m pytest test/
 ```
 
 ### Adding New Features

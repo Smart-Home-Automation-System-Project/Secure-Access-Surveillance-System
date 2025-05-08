@@ -59,7 +59,6 @@ class DatabaseService:
         if not authorized and frame is not None:
             image_path = self.cloud_service.upload_image(frame)
 
-        print(f"[INFO] Access log: {name} | Authorized: {authorized} | Unlock method: {unlock_method} | Image path: {image_path}")
 
         cursor.execute('''
             INSERT INTO access_logs (timestamp, name, authorized, unlock_method, image_path)
@@ -99,7 +98,7 @@ class DatabaseService:
         conn.close()
 
     def get_authorized_users(self):
-        """Get user details"""
+        """Get all authorized users"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
@@ -109,9 +108,10 @@ class DatabaseService:
             WHERE authorized = 1
         ''')
         
-        user = cursor.fetchone()
+        users = cursor.fetchall()
         conn.close()
-        return user
+        # Convert tuple of tuples to list of names
+        return [user[0] for user in users]
     
     def add_pin(self, pin):
         """Add a new authorized PIN to the database"""
@@ -232,8 +232,25 @@ class DatabaseService:
         
         conn.close()
         return all_data
-
     
+    def get_all_users(self):
+        """Get all users from the database"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        try:
+            cursor.execute("""
+                SELECT name
+                FROM users
+                ORDER BY name
+            """)
+            users = cursor.fetchall()
+            # Convert tuple of tuples to list of names
+            return [user[0] for user in users]
+        except Exception as e:
+            print(f"Error retrieving users: {e}")
+            return []
+        finally:
+            conn.close()
 
 def print_recent_access_attempts():
     db = DatabaseService()

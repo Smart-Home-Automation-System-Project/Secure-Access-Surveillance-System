@@ -1,6 +1,18 @@
 from tkinter import *
 import customtkinter
 
+import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from db.db_service import DatabaseService
+
+db_service = DatabaseService()
+
+users = []
+pins = []
+users = db_service.get_authorized_users()
+pins = db_service.get_pins()
+
 def open_popup(txt): #popup window function
     popup_window = customtkinter.CTkToplevel(root)
     popup_window.title("Error")
@@ -15,15 +27,13 @@ def Login():
     username = username_entry.get()
     password = password_entry.get()
 
-    if username == "admin" and password == "1234":
+    if username in users and password in pins:
         print("Login successful")
         root.destroy()  # Close the login window
-        import homepage  # Import the homepage module (make sure it's in the same directory)
+        import gui.homepage  # Import the homepage module (make sure it's in the same directory)
     else:
         print("Invalid credentials")
         open_popup("Invalid username or password")
-
-
 
 
 customtkinter.set_appearance_mode("dark")
