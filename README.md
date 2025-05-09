@@ -15,12 +15,13 @@ A smart security system using facial recognition, running on Raspberry Pi with c
 ## Prerequisites
 
 - Raspberry Pi (3 or newer recommended)
+- Ubuntu 20.04
 - Webcam or camera module
 - Python 3.7+
 - Internet connection for cloud features
 - MQTT broker (optional for remote monitoring)
 
-## Installation (Ubuntu 22.04)
+## Development Environment Setup (Ubuntu 20.04)
 
 1. Clone the repository:
 ```bash
@@ -42,21 +43,7 @@ sudo apt full-upgrade
 
 4. Install dependencies in the virtual environment:
 ```bash
-pip3 install "numpy<2.0"
-pip3 install opencv-python
-pip3 install dlib
-pip3 install face-recognition
-pip3 install paho-mqtt
-pip3 install matplotlib
-pip3 install imutils
-pip3 install cloudinary
-pip3 install uuid
-pip3 install flask
-pip3 install firebase-admin
-pip3 install customtkinter
-pip3 install python-dotenv
-pip install easyocr
-pip install pytest pytest-cov mock
+pip install -r requirements.txt
 ```
 
 ### References
@@ -100,15 +87,43 @@ FIREBASE_DATABASE_URL=<your_firebase_database_url>
 ```bash
 python main.py
 ```
+2. Select which Part of the system to run:
+```bash
+Select an option:
+1. Open User Interface
+2. Start Security Services
+3. Exit
+Enter your choice (1/2/3):
+```
+### User Interface
+
+1. Login using username and password. (default: admin/1234)
+
+![Login Page](./assets/image_1.jpg)
+
+2. After successful login, you will be redirected to the main page.
+
+![Main Page](./assets/image_2.jpg)
+
+3. You can add a new user by clicking on the "Start Now" button under the "Add User" section.
+
+![Add User](./assets/image_3.jpg)
+
+4. After adding a user, click on the "Confirm" button under the "Confirm User" section to save the user details.
+
+5. You can view the access logs and intruder images by clicking on the "Access Logs" button.
+![Access Logs](./assets/image_4.jpg)
+![Intruder Logs](./assets/image_5.jpg)
+
+### Security Services
+
+1. Start the security services by selecting option 2 in the main menu.
 
 2. Available commands: 
 - `status`: Check door lock status
 - `lock`: Manually lock the door
 - `pin XXXX`: Unlock using PIN
-- `exit`: Stop the system
-
-## Project Structure
-
+- `exit` or `ctrl+c`: Stop the service
 
 ## Development
 

@@ -93,8 +93,8 @@ def main():
     try:
         while True:
             # Ask the user what to start
-            print("\nWhat would you like to do?")
-            print("1. Start UI")
+            print("\nSelect an option:")
+            print("1. Open User Interface")
             print("2. Start Security Services")
             print("3. Exit")
             choice = input("Enter your choice (1/2/3): ").strip()
