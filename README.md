@@ -105,13 +105,17 @@ Enter your choice (1/2/3):
 
 ![Main Page](./assets/image_2.jpg)
 
-3. You can add a new user by clicking on the "Start Now" button under the "Add User" section.
+3. You can add a new user by clicking on the "Start Now" button under the "Add User" section. Then click on the "Start Data Collection" button to start capturing images for the new user.
 
 ![Add User](./assets/image_3.jpg)
 
 4. After adding a user, click on the "Confirm" button under the "Confirm User" section to save the user details.
 
+![Confirm User](./assets/image_6.jpg)
+
 5. You can view the access logs and intruder images by clicking on the "Access Logs" button.
+
+![Access Logs](./assets/image_7.jpg)
 ![Access Logs](./assets/image_4.jpg)
 ![Intruder Logs](./assets/image_5.jpg)
 
