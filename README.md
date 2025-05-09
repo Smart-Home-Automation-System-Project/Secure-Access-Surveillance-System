@@ -55,7 +55,6 @@ pip3 install flask
 pip3 install firebase-admin
 pip3 install customtkinter
 pip3 install python-dotenv
-pip install easyocr
 pip install pytest pytest-cov mock
 ```
 
@@ -106,9 +105,6 @@ python main.py
 - `lock`: Manually lock the door
 - `pin XXXX`: Unlock using PIN
 - `exit`: Stop the system
-
-## Project Structure
-
 
 ## Development
 
