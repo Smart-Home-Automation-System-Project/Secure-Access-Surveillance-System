@@ -324,9 +324,19 @@ refresh_button = customtkinter.CTkButton(button_frame, text="Refresh List",
                                          command=refresh_user_list)
 refresh_button.pack(padx=10, pady=10)
 
+def on_closing():
+    """Handle window closing event and exit application"""
+    print("Closing application...")
+    
+    # Destroy the window
+    root.destroy()
+    sys.exit(0)
+
+
 # Load users initially
 refresh_user_list()
 
+root.protocol("WM_DELETE_WINDOW", on_closing)
 root.mainloop()
 
 # Release camera resources after the main loop - removed but kept as comments

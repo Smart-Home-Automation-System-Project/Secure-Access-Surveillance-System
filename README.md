@@ -30,8 +30,8 @@ cd Secure-Access-Surveillance-System
 
 2. Set up a virtual environment:
 ```bash
-python3 -m venv --system-site-packages .venv
-source .venv/bin/activate
+python3 -m venv --system-site-packages venv
+source venv/bin/activate
 ```
 
 3. Update packages:
@@ -55,6 +55,7 @@ pip3 install flask
 pip3 install firebase-admin
 pip3 install customtkinter
 pip3 install python-dotenv
+pip install easyocr
 pip install pytest pytest-cov mock
 ```
 

@@ -16,15 +16,24 @@ class DatabaseService:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        # Update access_logs table to include image path
+        # Create access_logs table to log access attempts
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS access_logs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 timestamp DATETIME NOT NULL,
                 name TEXT NOT NULL,
                 authorized BOOLEAN NOT NULL,
-                unlock_method TEXT NOT NULL,
-                image_path TEXT
+                unlock_method TEXT NOT NULL
+            )
+        ''')
+
+        # Create intruder_images table to store images of intruders
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS intruder_images (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                image_path TEXT NOT NULL,
+                log_id INTEGER,
+                FOREIGN KEY (log_id) REFERENCES access_logs (id) ON DELETE CASCADE
             )
         ''')
 
@@ -59,11 +68,19 @@ class DatabaseService:
         if not authorized and frame is not None:
             image_path = self.cloud_service.upload_image(frame)
 
-
+        # Insert into access_logs table
         cursor.execute('''
-            INSERT INTO access_logs (timestamp, name, authorized, unlock_method, image_path)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (datetime.now(), name, authorized, unlock_method, image_path))
+            INSERT INTO access_logs (timestamp, name, authorized, unlock_method)
+            VALUES (?, ?, ?, ?)
+        ''', (datetime.now(), name, authorized, unlock_method))
+        log_id = cursor.lastrowid  # Get the ID of the inserted log
+
+        # If image was uploaded, insert into intruder_images table
+        if image_path:
+            cursor.execute('''
+                INSERT INTO intruder_images (image_path, log_id)
+                VALUES (?, ?)
+            ''', (image_path, log_id))
         
         conn.commit()
         conn.close()
@@ -202,10 +219,11 @@ class DatabaseService:
         cursor = conn.cursor()
         
         cursor.execute('''
-            SELECT timestamp, name, image_path
+            SELECT access_logs.timestamp, access_logs.name, intruder_images.image_path
             FROM access_logs
-            WHERE authorized = 0 AND image_path IS NOT NULL
-            ORDER BY timestamp DESC
+            INNER JOIN intruder_images ON access_logs.id = intruder_images.log_id
+            WHERE access_logs.authorized = 0
+            ORDER BY access_logs.timestamp DESC
             LIMIT ?
         ''', (limit,))
         

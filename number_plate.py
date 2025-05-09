@@ -33,7 +33,7 @@ KNOWN_PLATES = ['MH20EE7602']
 
 class LicensePlateRecognizer:
     def __init__(self):
-        self.reader = easyocr.Reader(['en'])
+        self.reader = easyocr.Reader(['en'], gpu=False)
         self.last_plate = ""
         self.plate_cascade = cv2.CascadeClassifier(
             cv2.data.haarcascades + 'haarcascade_russian_plate_number.xml')
@@ -91,7 +91,7 @@ class LicensePlateRecognizer:
     def license_plate_recognition(self):
         """Main function to run license plate recognition"""
         # Open video capture
-        cap = cv2.VideoCapture(1)
+        cap = cv2.VideoCapture(0)
         if not cap.isOpened():
             print("Error: Could not open video capture")
             return

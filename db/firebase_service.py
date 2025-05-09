@@ -104,6 +104,19 @@ class FirebaseService:
                     # Use ID as key if it exists
                     if 'id' in row_dict:
                         firebase_data[table_name][str(row_dict['id'])] = row_dict
+
+            # Add links between intruder_images and access_logs
+            if 'intruder_images' in firebase_data and 'access_logs' in firebase_data:
+                # Create a reverse lookup to link images to access logs
+                for img_id, img_data in firebase_data['intruder_images'].items():
+                    if 'log_id' in img_data and str(img_data['log_id']) in firebase_data['access_logs']:
+                        log_entry = firebase_data['access_logs'][str(img_data['log_id'])]
+                        if 'images' not in log_entry:
+                            log_entry['images'] = []
+                        log_entry['images'].append({
+                            'id': img_id,
+                            'image_path': img_data.get('image_path', '')
+                        })
                     
             firebase_data['metadata'] = {
                 'last_sync': datetime.now().isoformat(),
