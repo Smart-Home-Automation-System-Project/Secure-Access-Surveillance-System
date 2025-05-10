@@ -24,24 +24,28 @@ A smart security system using facial recognition, running on Raspberry Pi with c
 ## Development Environment Setup (Ubuntu 20.04)
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/Smart-Home-Automation-System-Project/Secure-Access-Surveillance-System
 cd Secure-Access-Surveillance-System
 ```
 
 2. Set up a virtual environment:
+
 ```bash
 python3 -m venv --system-site-packages venv
 source venv/bin/activate
 ```
 
 3. Update packages:
+
 ```bash
 sudo apt update
 sudo apt full-upgrade
 ```
 
 4. Install dependencies in the virtual environment:
+
 ```bash
 pip install -r requirements.txt
 ```
@@ -54,6 +58,7 @@ pip install -r requirements.txt
 ## Configuration
 
 Create .env file in the root directory with the following structure:
+
 ```python
 # Cloudinary Configuration
 CLOUDINARY_CLOUD_NAME=<your_cloud_name>
@@ -73,10 +78,12 @@ FIREBASE_DATABASE_URL=<your_firebase_database_url>
 ```
 
 ### Cloudinary Configuration
+
 1. Create a Cloudinary account and set up a new project.
 2. Obtain the Cloudinary credentials (cloud name, API key, API secret) and update the `.env` file.
 
 ### Firebase Configuration
+
 1. Create a Firebase project and enable the Realtime Database.
 2. Download the service account key JSON file and place it in the `config/` directory.
 3. Update the `.env` file with the Firebase database URL.
@@ -84,10 +91,19 @@ FIREBASE_DATABASE_URL=<your_firebase_database_url>
 ## Usage
 
 1. Start the main system:
+
 ```bash
 python main.py
 ```
+or
+
+```bash
+chmod +x run.sh # Make the script executable
+./run.sh
+```
+
 2. Select which Part of the system to run:
+
 ```bash
 Select an option:
 1. Open User Interface
@@ -95,6 +111,7 @@ Select an option:
 3. Exit
 Enter your choice (1/2/3):
 ```
+
 ### User Interface
 
 1. Login using username and password. (default: admin/1234)
@@ -123,7 +140,8 @@ Enter your choice (1/2/3):
 
 1. Start the security services by selecting option 2 in the main menu.
 
-2. Available commands: 
+2. Available commands:
+
 - `status`: Check door lock status
 - `lock`: Manually lock the door
 - `pin XXXX`: Unlock using PIN
@@ -132,11 +150,13 @@ Enter your choice (1/2/3):
 ## Development
 
 ### Running Tests
+
 ```bash
 python -m pytest test/
 ```
 
 ### Adding New Features
+
 1. Create feature branch
 2. Implement changes
 3. Submit pull request
@@ -157,9 +177,12 @@ python -m pytest test/
 4. Push to branch
 5. Submit pull request
 
-
 ## Acknowledgments
 
 - Face recognition using [face_recognition](https://github.com/ageitgey/face_recognition)
 - MQTT implementation with [paho-mqtt](https://github.com/eclipse/paho.mqtt.python)
 - Cloud storage using [Cloudinary](https://cloudinary.com/)
+
+chmod +x run_application.sh
+
+./run_application.sh
